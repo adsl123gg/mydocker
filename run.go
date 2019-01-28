@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig) {
-    parent, writePipe := container.NewParentProcess(tty)
+func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string) {
+    parent, writePipe := container.NewParentProcess(tty, volume)
     if parent == nil {
 	log.Errorf("New parent process error")
 	return
@@ -27,7 +27,11 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig) {
     sendInitCommand(cmdArray, writePipe)
 
     parent.Wait()
-    os.Exit(-1)
+
+    mntURL := "/root/image/mnt/"
+    rootURL :=  "/root/image/"
+    container.DeleteWorkSpace(rootURL, mntURL, volume)
+    os.Exit(0)
 }
 
 func sendInitCommand(cmdArray []string, writePipe *os.File) {
