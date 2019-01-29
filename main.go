@@ -17,6 +17,11 @@ func main() {
 		initCommand,
 		runCommand,
 		commitCommand,
+		listCommand,
+		logCommand,
+		execCommand,
+		stopCommand,
+		removeCommand,
 	}
 
 	if err:= app.Run(os.Args); err != nil {
