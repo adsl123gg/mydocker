@@ -3,12 +3,69 @@ package main
 import (
 	log "github.com/Sirupsen/logrus"
 	"mydocker/container"
+	"mydocker/network"
 	"mydocker/subsystems"
 	"fmt"
 	"strings"
 	"github.com/urfave/cli"
 	"os"
 )
+
+var networkCommand =  cli.Command{
+        Name: "network",
+        Usage: `operate container network`,
+	Subcommands: []cli.Command {
+		{
+			Name: "create",
+			Usage: "create a container network",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "driver",
+					Usage: "network driver",
+				},
+				cli.StringFlag{
+					Name:  "subnet",
+					Usage: "subnet cidr",
+				},
+			},
+			Action:func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("Missing network name")
+				}
+				network.Init()
+				err := network.CreateNetwork(context.String("driver"), context.String("subnet"), context.Args()[0])
+				if err != nil {
+					return fmt.Errorf("create network error: %+v", err)
+				}
+				return nil
+			},
+		},
+		{
+			Name: "list",
+			Usage: "list container network",
+			Action:func(context *cli.Context) error {
+				network.Init()
+				network.ListNetwork()
+				return nil
+			},
+		},
+		{
+			Name: "remove",
+			Usage: "remove container network",
+			Action:func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("Missing network name")
+				}
+				network.Init()
+				err := network.DeleteNetwork(context.Args()[0])
+				if err != nil {
+					return fmt.Errorf("remove network error: %+v", err)
+				}
+				return nil
+			},
+		},
+	},
+}
 
 var removeCommand =  cli.Command{
         Name: "rm",
@@ -116,6 +173,14 @@ var runCommand = cli.Command{
                         Usage: "enviroment variables",
                 },
 		cli.StringFlag{
+			Name:  "net",
+			Usage: "network",
+		},
+		cli.StringSliceFlag{
+                        Name:  "p",
+                        Usage: "port mapping",
+                },
+		cli.StringFlag{
 			Name:  "v",
 			Usage: "volume",
 		},
@@ -143,10 +208,12 @@ var runCommand = cli.Command{
 			return fmt.Errorf("ti and d can't exist at same time")
 		}
                 volume := context.String("v")
+                network := context.String("net")
                 envSlice := context.StringSlice("e")
+                portMapping := context.StringSlice("p")
                 containerName := context.String("name")
 		res := &subsystems.ResourceConfig{MemoryLimit: context.String("m")}
-                Run(tty, cmdArray, res, volume, imageName, containerName, envSlice)
+                Run(tty, cmdArray, res, volume, imageName, containerName, envSlice, network, portMapping)
                 return nil
         },
 }

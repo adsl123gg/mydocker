@@ -30,6 +30,8 @@ type ContainerInfo struct {
 	CreatedTime string `json:"createTime"`
 	Status      string `json:"status"`
 	ImageName   string `json:"ImageName"`
+	IP	    string `json:"IP"`
+	PortMapping []string `json:"portmapping"`
 }
 
 func NewParentProcess(tty bool, volume string, imageName string, containerName string, envSlice []string) (*exec.Cmd, *os.File) {

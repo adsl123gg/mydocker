@@ -12,6 +12,9 @@ type Configuration struct {
     MntURL   string
     ImgURL   string
     ContainerInfoLocation	string
+    IPAMPath	string
+    NetworkPath	string
+    EndpointPath	string
 }
 
 const configLoc = "/root/image/config/conf.json"
@@ -59,3 +62,23 @@ func GetContainerInfoLocation() string {
 }
 
 
+func GetIPAMPath() string {
+        if configuration.init == false {
+                readConfig()
+        }
+        return configuration.IPAMPath
+}
+
+func GetNetworkPath() string {
+        if configuration.init == false {
+                readConfig()
+        }
+        return configuration.NetworkPath
+}
+
+func GetEndPointPath() string {
+	if configuration.init == false {
+                readConfig()
+        }
+        return configuration.EndpointPath
+}

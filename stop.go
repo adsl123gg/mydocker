@@ -24,7 +24,6 @@ func StopContainer(containerName string) {
 
 	if err := syscall.Kill(pidInt, syscall.SIGTERM); err != nil {
                 log.Errorf("kill container %s error: %v", containerName, err)
-                return
         }
 
 	containerInfo, err := getContainerInfoByName(containerName)

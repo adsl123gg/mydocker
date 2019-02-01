@@ -3,7 +3,7 @@ package main
 import (
 	log "github.com/Sirupsen/logrus"
 	"mydocker/container"
-	//"mydocker/util"
+	nw "mydocker/network"
 	"mydocker/subsystems"
 	"os"
 	"strings"
@@ -14,7 +14,7 @@ import (
 	"encoding/json"
 )
 
-func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string, imageName string, containerName string, envSlice []string) {
+func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string, imageName string, containerName string, envSlice []string, network string, portmapping []string) {
     id, containerName := getContainerIdName(containerName)
     parent, writePipe := container.NewParentProcess(tty, volume, imageName, containerName, envSlice)
     if parent == nil {
@@ -38,10 +38,29 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume str
     cgroupMgr.Set(res)
     cgroupMgr.Apply(parent.Process.Pid)
 
+    var containerInfo  *container.ContainerInfo
+    if network != "" {
+	nw.Init()
+	containerInfo = &container.ContainerInfo{
+			Id:          id,
+			Pid:         strconv.Itoa(parent.Process.Pid),
+			Name:        containerName,
+			PortMapping: portmapping,
+		}
+	if err := nw.Connect(network, containerInfo); err != nil {
+		log.Errorf("Error Connect Network %v", err)
+		return
+	}
+    }
+
     sendInitCommand(cmdArray, writePipe)
 
     if tty {
 	parent.Wait()
+	if network != "" {
+		nw.Init()
+		nw.Disconnect(network, containerInfo)
+	}
 	deleteContainerInfo(containerName)
 	container.DeleteWorkSpace(containerName, volume)
     }
@@ -80,7 +99,10 @@ func recordContainerInfo(containerPID int, commandArray []string, id string, ima
 		Name:        containerName,
 		ImageName:   imageName,
 	}
+	return writeContainerInfo(containerInfo)
+}
 
+func writeContainerInfo(containerInfo *container.ContainerInfo) (string, error) {
 	jsonBytes, err := json.Marshal(containerInfo)
 	if err != nil {
 		log.Errorf("Record container info error %v", err)
@@ -88,6 +110,7 @@ func recordContainerInfo(containerPID int, commandArray []string, id string, ima
 	}
 	jsonStr := string(jsonBytes)
 
+	containerName := containerInfo.Name
 	dirUrl := fmt.Sprintf(container.DefaultInfoLocation, containerName)
 	if !container.PathExists(dirUrl) {
 		if err := os.MkdirAll(dirUrl, 0622); err != nil {
