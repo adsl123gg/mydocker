@@ -1,5 +1,5 @@
 mydocker is personal study project, according to github.com/xianlubird/mydocker.
-my enviroment is Linux 4.4.0-141-generic x86_64, Ubuntu 16.04
+my OS enviroment is Linux 4.4.0-141-generic x86_64, Ubuntu 16.04, go enviroment is version go1.11.2 linux/amd64.
 
 
 Progress:
@@ -15,7 +15,48 @@ Progress:
 
 Missing function:
 1. for container running in background, don't know when it go to exit status 
+check the parent process staus to judge whether container is exited, but it need a daemon therad to track all container process,
+can be done in the future
 
 2. not check image exist, container name repeat
+just manual jobs
 
 
+
+Summary:
+1. the main thinking of mydocker is create a process with 6 isolated namespaces, and use Cgroups to limit the resource usage. T
+he 6 namespaces is "syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS |syscall.CLONE_NEWNET | 
+syscall.CLONE_NEWIPC". 
+
+when create the process with 6 isolated namespaces, it's called parent process, then use Cgroups to limit the parent process
+resource usage. Then create docker init process as the child of parent process, docker init process call PivotRoot and Chdir to
+create new root file system and make current path to root directory, then mount the required directory(/proc, /dev).
+
+ps:
+when create parent process, should use below SysProcAttr, add syscall.CLONE_NEWNS to Unshareflags parameters.
+cmd.SysProcAttr = &syscall.SysProcAttr{
+        Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS |
+        syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
+        Unshareflags: syscall.CLONE_NEWNS,
+    }
+
+
+
+2. use AUFS implement mydocker read/write layer, read layer is already exist in OS, container only modify write layer, so 
+different can use same read layer, that's why new container need less disk space.
+
+   use mount to implement volume function.
+
+
+
+3. the main work of mydocker network is create bridge and veth pairs. 
+
+when create a bridge, set the bridge address, up bridge and set iptable rules(change the source address of traffic from 
+container to bridge address), then set route rules to lead container traffic to the bridge.
+
+when create the veth pairs(veth0 and veth1), bind veth0 to bridge, move veth1 to container network namespace, then set 
+container route to use veth1 to send traffic.
+
+
+
+4. don't know why setns syscall can't run in multiple threads enviroment
