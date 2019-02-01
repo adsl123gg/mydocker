@@ -9,11 +9,13 @@ Progress:
 
 3.finish advanced function in 01/29, including "docker ps/log/exec/stop/rm/commit" and etc
 
+4.finish network function 02/01, including create/remove network and connect/disconnect container with network
+
+
 
 Missing function:
 1. for container running in background, don't know when it go to exit status 
 
 2. not check image exist, container name repeat
 
-3. 
 
