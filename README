@@ -15,7 +15,7 @@ Progress:
 
 Missing function:
 1. for container running in background, don't know when it go to exit status 
-check the parent process staus to judge whether container is exited, but it need a daemon therad to track all container process,
+detect the parent process staus to judge whether container is exited, but it need a daemon therad to track all container process,
 can be done in the future
 
 2. not check image exist, container name repeat
@@ -23,14 +23,32 @@ just manual jobs
 
 
 
+How to use mydocker?
+1. down mydocker project to you $GOPATH/src/ directory
+2. create configuration file in /root/image/config/conf.json, and specify some variables, the configuration content is below.
+
+conf.json:
+{
+        "RootURL" : "/root/image/containers/%s/",
+        "MntURL" : "/root/image/containers/%s/mnt/",
+        "ImgURL" : "/root/image/imgs/",
+        "IPAMPath" : "/root/image/mydocker/network/ipam/subnet.json",
+        "NetworkPath" : "/root/image/mydocker/network/network/",
+        "EndpointPath" : "/root/image/mydocker/network/endpoint/",
+        "ContainerInfoLocation" : "/root/image/mydocker/run/%s/"
+}
+
+3. in mydocker directory, run "go build ." to compile and then run "./mydocker ..." to use it
+
+
+
+
 Summary:
-1. the main thinking of mydocker is create a process with 6 isolated namespaces, and use Cgroups to limit the resource usage. T
-he 6 namespaces is "syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS |syscall.CLONE_NEWNET | 
+1. the main thinking of mydocker is create a process with 6 isolated namespaces, and use Cgroups to limit the resource usage. The 6 namespaces is "syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS |syscall.CLONE_NEWNET | 
 syscall.CLONE_NEWIPC". 
 
 when create the process with 6 isolated namespaces, it's called parent process, then use Cgroups to limit the parent process
-resource usage. Then create docker init process as the child of parent process, docker init process call PivotRoot and Chdir to
-create new root file system and make current path to root directory, then mount the required directory(/proc, /dev).
+resource usage. Then create docker init process as the child of parent process, docker init process call PivotRoot and Chdir to create new root file system and make current path to root directory, then mount the required directory(/proc, /dev).
 
 ps:
 when create parent process, should use below SysProcAttr, add syscall.CLONE_NEWNS to Unshareflags parameters.
@@ -46,6 +64,9 @@ cmd.SysProcAttr = &syscall.SysProcAttr{
 different can use same read layer, that's why new container need less disk space.
 
    use mount to implement volume function.
+
+ps:
+in docker implementation, docker put the read/write layer in /var/lib/docker/aufs, there are diff,layers and mnt directories. The layers directory contains some files, one file is named as layer name and it record what other layers it depend on. The diff directory contains some directories, one directory is named as layer name and it contains what files the layer have(The ID-init named directory is read only layer, the ID named directory is read-write layer， and read-write layer depend on read-only layer). The mnt directory is the mount directory of container layer.
 
 
 
