@@ -1,4 +1,4 @@
-mydocker is personal study project, according to github.com/xianlubird/mydocker.
+mydocker is personal study project, according to the book 《自己动手写Docker》.
 my OS enviroment is Linux 4.4.0-141-generic x86_64, Ubuntu 16.04, go enviroment is version go1.11.2 linux/amd64.
 
 
@@ -80,4 +80,11 @@ container route to use veth1 to send traffic.
 
 
 
-4. don't know why setns syscall can't run in multiple threads enviroment
+4. don't know why setns syscall can't run in multiple threads enviroment?
+
+
+
+Reference:
+1. the source code of <<自己动手写docker>> , in https://github.com/xianlubird/mydocker
+2. the blog in https://lk4d4.darth.io/posts/unpriv1/
+
